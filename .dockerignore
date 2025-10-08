@@ -1,0 +1,31 @@
+node_modules
+npm-debug.log
+.git
+.gitignore
+README.md
+.env
+.nyc_output
+coverage
+.vscode
+.kiro
+dist
+*.log
+.DS_Store
+Thumbs.db
+
+# Test files
+test-*.js
+*test*.js
+*.test.*
+*.spec.*
+
+# Documentation
+*.md
+DEPLOYMENT.md
+E2E_TEST_REPORT.md
+IMPLEMENTATION_SUMMARY.md
+LIMESURVEY_INTEGRATION_VERIFICATION.md
+MCP_SUPABASE_VERIFICATION.md
+MIGRACION_COMPLETADA.md
+MIGRACION_FASTAPI.md
+TESTING_RESULTS.md
