@@ -9,7 +9,8 @@
     "build:prod": "pnpm install && pnpm clean:vite && tsc -b tsconfig.build.json && SET BUILD_MODE=prod && vite build",
     "clean:vite": "node -e \"const fs = require('fs'); const path = require('path'); const dir = path.join('node_modules', '.vite-temp'); if (fs.existsSync(dir)) fs.rmSync(dir, {recursive: true, force: true});\"",
     "lint": "pnpm install && eslint .",
-    "preview": "pnpm install && vite preview"
+    "preview": "pnpm install && vite preview",
+    "populate-survey": "node scripts/populate-survey-data.js"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
@@ -32,6 +33,7 @@
     "sonner": "^1.7.2",
     "tailwind-merge": "^2.6.0",
     "tailwindcss-animate": "^1.0.7",
+    "xlsx": "^0.18.5",
     "zod": "^3.24.1"
   },
   "devDependencies": {

@@ -1,0 +1,35 @@
+{
+  "mcpServers": {
+    "supabase": {
+      "command": "cmd",
+      "args": [
+        "/c",
+        "npx",
+        "-y",
+        "@supabase/mcp-server-supabase@latest",
+        "--project-ref=idahoiszluzixfbkwfth"
+      ],
+      "env": {
+        "SUPABASE_ACCESS_TOKEN": "sbp_84de1693178b16cae63b50de6f51fed065679ea6"
+      },
+      "disabled": false,
+      "autoApprove": [
+        "list_tables",
+        "list_migrations",
+        "apply_migration",
+        "list_edge_functions",
+        "execute_sql",
+        "get_advisors",
+        "get_project_url",
+        "get_anon_key",
+        "deploy_edge_function",
+        "search_docs",
+        "get_logs"
+      ]
+    },
+    "chrome-devtools": {
+      "command": "npx",
+      "args": ["-y", "chrome-devtools-mcp@latest"]
+    }
+  }
+}
