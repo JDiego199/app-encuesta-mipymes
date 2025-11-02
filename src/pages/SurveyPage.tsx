@@ -133,41 +133,7 @@ export function SurveyPage() {
     )
   }
 
-  // Error state
-  if (error) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-white flex items-center justify-center p-4">
-        <Card className="max-w-md mx-auto text-center shadow-lg">
-          <CardHeader>
-            <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <AlertCircle className="h-8 w-8 text-red-600" />
-            </div>
-            <CardTitle className="text-xl font-bold text-bidata-dark">
-              Error al cargar la encuesta
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-bidata-gray mb-6">{error}</p>
-            <div className="space-y-3">
-              <Button 
-                onClick={retryLoad} 
-                className="w-full bg-bidata-cyan hover:bg-bidata-cyan/90"
-              >
-                Reintentar
-              </Button>
-              <Button 
-                variant="outline" 
-                onClick={handleBackToDashboard}
-                className="w-full"
-              >
-                Volver al Dashboard
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    )
-  }
+
 
   // No questions available
   if (!currentQuestion || questions.length === 0) {

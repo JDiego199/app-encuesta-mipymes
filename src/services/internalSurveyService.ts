@@ -29,47 +29,43 @@ export class InternalSurveyService {
   /**
    * Get or create a survey participant for the current user
    */
+
   static async getOrCreateParticipant(userId: string): Promise<SurveyParticipant> {
     try {
-      // First, try to get existing participant
-      const { data: existingParticipant, error: fetchError } = await supabase
+      // 1️ Verificar si ya existe
+      const { data: existing, error: selectError } = await supabase
         .from('survey_participants')
         .select('*')
         .eq('user_id', userId)
         .eq('survey_id', this.SURVEY_ID)
-        .maybeSingle()
+        .single();
 
-      if (fetchError && fetchError.code !== 'PGRST116') {
-        throw fetchError
-      }
+      if (selectError && selectError.code !== 'PGRST116') throw selectError; // error real
+      if (existing) return existing as SurveyParticipant; // ya existe
 
-      if (existingParticipant) {
-        return existingParticipant
-      }
-
-      // Create new participant
-      const { data: newParticipant, error: createError } = await supabase
+      // 2️ Crear solo si no existe
+      const { data, error: insertError } = await supabase
         .from('survey_participants')
         .insert({
           user_id: userId,
           survey_id: this.SURVEY_ID,
           status: 'in_progress',
           started_at: new Date().toISOString(),
-          current_question_index: 0
+          current_question_index: 0,
+          updated_at: new Date().toISOString()
         })
         .select()
-        .single()
+        .single();
 
-      if (createError) {
-        throw createError
-      }
+      if (insertError) throw insertError;
+      return data as SurveyParticipant;
 
-      return newParticipant
     } catch (error) {
-      console.error('Error getting/creating participant:', error)
-      throw error
+      console.error('Error getting/creating participant:', error);
+      throw error;
     }
   }
+
 
   /**
    * Update participant progress

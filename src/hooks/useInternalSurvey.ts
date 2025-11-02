@@ -25,7 +25,7 @@ export function useInternalSurvey(questions: SurveyQuestion[]): UseInternalSurve
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const loadParticipantData = useCallback(async () => {
+  const loadParticipantData = useCallback(async (retryCount = 0) => {
     if (!user) return
 
     setIsLoading(true)
@@ -47,12 +47,31 @@ export function useInternalSurvey(questions: SurveyQuestion[]): UseInternalSurve
       })
     } catch (error: any) {
       console.error('Error loading participant data:', error)
+
+      const MAX_RETRIES = 3
+      if (retryCount < MAX_RETRIES) {
+        const delay = 500 * (retryCount + 1)
+        console.warn(`Retrying to load participant data in ${delay}ms... Attempt ${retryCount + 1}`)
+
+        await new Promise(resolve => setTimeout(resolve, delay))
+        return loadParticipantData(retryCount + 1)
+      }
       setError(error.message || 'Error al cargar datos de la encuesta')
-      toast.error('Error al cargar la encuesta')
+      toast.error('Error persistente al cargar la encuesta. Intente de nuevo.')
     } finally {
-      setIsLoading(false)
+
+      if (retryCount >= 3 || error == null) {
+        setIsLoading(false)
+      }
     }
   }, [user])
+
+  useEffect(() => {
+    if (user) {
+      loadParticipantData(0)
+    }
+  }, [user, loadParticipantData])
+
 
   const saveResponse = useCallback(async (questionId: string, value: any) => {
     if (!participant) return

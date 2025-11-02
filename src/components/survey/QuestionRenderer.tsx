@@ -197,24 +197,24 @@ export function QuestionRenderer({ question, value, onChange, disabled = false }
             {/* Scale */}
             <div className="space-y-3">
               {likertLabels.map((label, index) => {
-                const value = index + 1
+                const scaleValue = index + 1
                 return (
-                  <div key={value} className="flex items-center space-x-3">
+                  <div key={scaleValue} className="flex items-center space-x-3">
                     <input
                       type="radio"
-                      id={`${question.id}-likert-${value}`}
+                      id={`${question.id}-likert-${scaleValue}`}
                       name={question.id}
-                      value={value}
-                      checked={value === parseInt(value)}
-                      onChange={(e) => onChange(e.target.value)}
+                      value={scaleValue}
+                      checked={value === scaleValue}
+                      onChange={() => onChange(scaleValue)}
                       disabled={disabled}
                       className="h-4 w-4 text-bidata-cyan focus:ring-bidata-cyan border-gray-300"
                     />
                     <Label 
-                      htmlFor={`${question.id}-likert-${value}`}
+                      htmlFor={`${question.id}-likert-${scaleValue}`}
                       className="text-sm text-bidata-dark cursor-pointer flex-1"
                     >
-                      <span className="font-medium mr-2">{value}.</span>
+                      <span className="font-medium mr-2">{scaleValue}.</span>
                       {label}
                     </Label>
                   </div>
