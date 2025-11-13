@@ -12,6 +12,9 @@ interface QuestionRow {
   is_required: boolean
   order_index: number
   created_at: string
+  dimension: string | null
+  subdimension: string | null
+  likert_config?: any | null
 }
 
 interface SurveyResponseRow {
@@ -318,114 +321,132 @@ function categorizeQuestions(questions: QuestionWithResponses[]): Record<string,
  * @param resultsData - Raw survey results data
  * @returns Transformed metrics data
  */
+
 export function transformSurveyResultsToMetrics(resultsData: SurveyResultsData): MetricsData {
-  const { questions, userResponses, totalParticipants } = resultsData
+  const { questions, userResponses } = resultsData;
 
-  // Create a map of user responses by question ID for quick lookup
-  const userResponseMap = new Map<string, SurveyResponseRow>()
+  // Crear un mapa rápido de respuestas por ID de pregunta
+  const userResponseMap = new Map<string, SurveyResponseRow>();
   userResponses.forEach(response => {
-    userResponseMap.set(response.question_id, response)
-  })
+    userResponseMap.set(response.question_id, response);
+  });
 
-  // Group questions by category
-  const categorizedQuestions = categorizeQuestions(questions)
-  const categories = Object.keys(categorizedQuestions).filter(cat => categorizedQuestions[cat].length > 0)
+  // Agrupar preguntas por categoría (dimensión)
+  const categorizedQuestions = categorizeQuestions(questions);
+  const categories = Object.keys(categorizedQuestions)
+    .filter(cat => cat && categorizedQuestions[cat].length > 0 && cat !== 'null'); // 👈 evita categorías vacías o "null"
 
-  // Create metrics for each question
-  const metrics: Metric[] = []
-  const dimensions: SurveyDimension[] = []
+  // Crear métricas y dimensiones
+  const metrics: Metric[] = [];
+  const dimensions: SurveyDimension[] = [];
 
   categories.forEach(categoryName => {
-    const categoryQuestions = categorizedQuestions[categoryName]
-    const surveyQuestions: SurveyQuestion[] = []
-    let categoryUserScore = 0
-    let categoryAverageScore = 0
-    let categoryMaxScore = 0
+    const categoryQuestions = categorizedQuestions[categoryName];
 
+    // 🔹 Agrupar preguntas por subdimensión dentro de la categoría
+    const subdimensionGroups: Record<string, QuestionRow[]> = {};
     categoryQuestions.forEach(question => {
-      const userResponse = userResponseMap.get(question.id)
-      const userValue = getUserResponseValue(question, userResponse)
-      const averageValue = calculateQuestionAverage(question, question.survey_responses)
-      const maxValue = getQuestionMaxValue(question)
+      if (!question.subdimension) return; // 👈 ignora las preguntas sin subdimensión
+      const sub = question.subdimension.trim();
+      if (!sub) return; // 👈 ignora texto vacío
+      if (!subdimensionGroups[sub]) subdimensionGroups[sub] = [];
+      subdimensionGroups[sub].push(question);
+    });
 
-      // Add to metrics
+    const subdimensions = Object.keys(subdimensionGroups);
+    if (subdimensions.length === 0) return; // 👈 evita mostrar categorías sin subdimensiones válidas
+
+    // 🔹 Calcular puntajes totales por categoría
+    let categoryUserScore = 0;
+    let categoryAverageScore = 0;
+    let categoryMaxScore = 0;
+
+    // 🔹 Crear una métrica por cada SUBDIMENSIÓN
+    subdimensions.forEach(sub => {
+      const subQuestions = subdimensionGroups[sub];
+      let subUserTotal = 0;
+      let subAverageTotal = 0;
+      let subMaxTotal = 0;
+
+      subQuestions.forEach(question => {
+        const userResponse = userResponseMap.get(question.id);
+        const userValue = getUserResponseValue(question, userResponse);
+        const averageValue = calculateQuestionAverage(question, (question as any).survey_responses);
+        const maxValue = getQuestionMaxValue(question);
+
+        subUserTotal += userValue;
+        subAverageTotal += averageValue;
+        subMaxTotal += maxValue;
+      });
+
+      const count = subQuestions.length || 1;
+      const subUserAvg = +(subUserTotal / count).toFixed(1);    
+      const subAvg = +(subAverageTotal / count).toFixed(1);     
+      const subMax = +(subMaxTotal / count).toFixed(1);         
+
       metrics.push({
-        id: `question_${question.id}`,
-        name: question.question_text.substring(0, 50) + (question.question_text.length > 50 ? '...' : ''),
-        description: question.question_text,
-        userValue,
-        averageValue,
-        maxValue,
+        id: `metric_${categoryName}_${sub}`.replace(/\s+/g, '_'),
+        name: sub,
+        description: sub, 
+        userValue: subUserAvg,
+        averageValue: subAvg,
+        maxValue: subMax,
         unit: 'puntos',
         category: categoryName
-      })
+      });
 
-      // Add to survey questions for dimension
-      surveyQuestions.push({
-        id: `question_${question.id}`,
-        text: question.question_text,
-        userAnswer: userValue,
-        averageAnswer: averageValue,
-        maxAnswer: maxValue
-      })
+      // Sumar al total de la categoría
+      categoryUserScore += subUserAvg;
+      categoryAverageScore += subAvg;
+      categoryMaxScore += subMax;
+    });
 
-      // Accumulate scores for category
-      categoryUserScore += userValue
-      categoryAverageScore += averageValue
-      categoryMaxScore += maxValue
-    })
-
-    // Create dimension for this category
-    if (surveyQuestions.length > 0) {
+    // Crear la dimensión basada en las subdimensiones
+    if (subdimensions.length > 0) {
       dimensions.push({
         id: categoryName.toLowerCase().replace(/\s+/g, '_'),
         name: categoryName,
         description: `Análisis de ${categoryName.toLowerCase()}`,
-        userScore: categoryUserScore,
-        averageScore: categoryAverageScore,
-        maxScore: categoryMaxScore,
-        questions: surveyQuestions
-      })
+        userScore: +categoryUserScore.toFixed(1),
+        averageScore: +categoryAverageScore.toFixed(1),
+        maxScore: +categoryMaxScore.toFixed(1),
+        subdimensions
+      });
     }
-  })
+  });
 
-  // Calculate overall metrics
-  const totalUserScore = metrics.reduce((sum, metric) => sum + metric.userValue, 0)
-  const totalAverageScore = metrics.reduce((sum, metric) => sum + metric.averageValue, 0)
-  const totalMaxScore = metrics.reduce((sum, metric) => sum + metric.maxValue, 0)
+  // 🔹 Calcular métricas generales
+  const totalUserScore = +metrics.reduce((sum, m) => sum + m.userValue, 0).toFixed(1);
+  const totalAverageScore = +metrics.reduce((sum, m) => sum + m.averageValue, 0).toFixed(1);
+  const totalMaxScore = +metrics.reduce((sum, m) => sum + m.maxValue, 0).toFixed(1);
 
-  // Calculate percentile (simplified calculation)
-  const userPercentage = totalMaxScore > 0 ? (totalUserScore / totalMaxScore) * 100 : 0
-  const percentile = Math.min(95, Math.max(5, Math.round(userPercentage)))
+  const userPercentage = totalMaxScore > 0 ? (totalUserScore / totalMaxScore) * 100 : 0;
+  const percentile = Math.min(95, Math.max(5, Math.round(userPercentage)));
 
-  // Identify strong and improvement areas
-  const strongAreas: string[] = []
-  const improvementAreas: string[] = []
+  // 🔹 Identificar áreas fuertes y de mejora
+  const strongAreas: string[] = [];
+  const improvementAreas: string[] = [];
 
   dimensions.forEach(dimension => {
-    const userPercentage = dimension.maxScore > 0 ? (dimension.userScore / dimension.maxScore) * 100 : 0
-    const avgPercentage = dimension.maxScore > 0 ? (dimension.averageScore / dimension.maxScore) * 100 : 0
+    const userPct = dimension.maxScore > 0 ? (dimension.userScore / dimension.maxScore) * 100 : 0;
+    const avgPct = dimension.maxScore > 0 ? (dimension.averageScore / dimension.maxScore) * 100 : 0;
 
-    if (userPercentage > avgPercentage + 10) {
-      strongAreas.push(dimension.name)
-    } else if (userPercentage < avgPercentage - 10) {
-      improvementAreas.push(dimension.name)
-    }
-  })
+    if (userPct > avgPct + 10) strongAreas.push(dimension.name);
+    else if (userPct < avgPct - 10) improvementAreas.push(dimension.name);
+  });
 
-  // Ensure we have at least one area in each category
   if (strongAreas.length === 0 && dimensions.length > 0) {
-    const bestDimension = dimensions.reduce((best, current) => 
+    const bestDimension = dimensions.reduce((best, current) =>
       (current.userScore / current.maxScore) > (best.userScore / best.maxScore) ? current : best
-    )
-    strongAreas.push(bestDimension.name)
+    );
+    strongAreas.push(bestDimension.name);
   }
 
   if (improvementAreas.length === 0 && dimensions.length > 0) {
-    const worstDimension = dimensions.reduce((worst, current) => 
+    const worstDimension = dimensions.reduce((worst, current) =>
       (current.userScore / current.maxScore) < (worst.userScore / worst.maxScore) ? current : worst
-    )
-    improvementAreas.push(worstDimension.name)
+    );
+    improvementAreas.push(worstDimension.name);
   }
 
   return {
@@ -439,8 +460,9 @@ export function transformSurveyResultsToMetrics(resultsData: SurveyResultsData):
     percentile,
     strongAreas: strongAreas.slice(0, 3),
     improvementAreas: improvementAreas.slice(0, 3)
-  }
+  };
 }
+
 
 /**
  * Get participant status for results display
