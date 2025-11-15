@@ -181,14 +181,10 @@ export function ResultsMetrics({ metricsData, className }: ResultsMetricsProps) 
       })}
 
 
-
+      
       {/* Global Radar Chart - Comparison of All Dimensions */}
       {categories.length > 1 && (
-        <Card className="p-6">
-          <h3 className="text-xl font-semibold text-center text-gray-900 mb-4">
-            Comparativo General entre Dimensiones
-          </h3>
-          <div className="w-full h-[400px]">
+          <div className="w-full h-[565px]">
             <ComparisonChart
               metrics={categories.map(cat => {
                 const dimMetrics = metricsByCategory[cat];
@@ -203,18 +199,16 @@ export function ResultsMetrics({ metricsData, className }: ResultsMetricsProps) 
                   userValue: +(totalUser / dimMetrics.length).toFixed(1),
                   averageValue: +(totalAvg / dimMetrics.length).toFixed(1),
                   maxValue: +(totalMax / dimMetrics.length).toFixed(1),
-                  description: `Comparativo general de la dimensión ${cat}`,
-                  
+                  description: `Comparativo general de todas las dimensión ${cat}`,
+                  unit: "puntos",
                 };
               })}
               chartType="radar"
-              title="Análisis Comparativo de Dimensiones Principales"
+              title="Comparativo Visual de Todas las Categorías"
               className="mt-4"
             />
-          </div>
-        </Card>
+          </div>       
       )}
-
 
 
 

@@ -177,7 +177,10 @@ export function QuestionRenderer({ question, value, onChange, disabled = false }
           right_label: 'Totalmente de acuerdo'
         }
         
-        // Definir las etiquetas de texto para la escala Likert 1-5
+
+
+
+        
         const likertLabels = [
           'Muy bajo / Nunca / Totalmente en desacuerdo',
           'Bajo / Raramente / En desacuerdo', 
@@ -185,44 +188,50 @@ export function QuestionRenderer({ question, value, onChange, disabled = false }
           'Alto / Frecuentemente / De acuerdo',
           'Muy alto / Siempre / Totalmente de acuerdo'
         ]
-        
+
         return (
           <div className="space-y-4">
-            {/* Labels */}
+            {/* Labels top-left / top-right */}
             <div className="flex justify-between items-center text-sm text-bidata-gray">
               <span>{likertConfig.left_label}</span>
               <span>{likertConfig.right_label}</span>
             </div>
-            
-            {/* Scale */}
-            <div className="space-y-3">
+
+            {/* Contenedor de columnas */}
+            <div className="flex justify-between mt-4 items-start">
               {likertLabels.map((label, index) => {
-                const scaleValue = index + 1
+                const scaleValue = index + 1; // valor que se guarda
+
                 return (
-                  <div key={scaleValue} className="flex items-center space-x-3">
-                    <input
-                      type="radio"
-                      id={`${question.id}-likert-${scaleValue}`}
-                      name={question.id}
-                      value={scaleValue}
-                      checked={value === scaleValue}
-                      onChange={() => onChange(scaleValue)}
-                      disabled={disabled}
-                      className="h-4 w-4 text-bidata-cyan focus:ring-bidata-cyan border-gray-300"
-                    />
-                    <Label 
-                      htmlFor={`${question.id}-likert-${scaleValue}`}
-                      className="text-sm text-bidata-dark cursor-pointer flex-1"
-                    >
-                      <span className="font-medium mr-2">{scaleValue}.</span>
+                  <div
+                    key={scaleValue}
+                    className="flex flex-col items-center w-28"
+                  >
+                    {/* Radio con altura fija para alinear todos */}
+                    <div className="flex justify-center items-center h-8">
+                      <input
+                        type="radio"
+                        id={`${question.id}-likert-${scaleValue}`}
+                        name={question.id}
+                        value={scaleValue}
+                        checked={value === scaleValue}
+                        onChange={() => onChange(scaleValue)}
+                        disabled={disabled}
+                        className="h-4 w-4 text-bidata-cyan focus:ring-bidata-cyan"
+                      />
+                    </div>
+
+                    {/* Label debajo */}
+                    <div className="mt-2 min-h-[3rem] flex items-start justify-center text-center text-xs text-bidata-dark">
                       {label}
-                    </Label>
+                    </div>
                   </div>
                 )
               })}
             </div>
           </div>
         )
+
 
       default:
         return (

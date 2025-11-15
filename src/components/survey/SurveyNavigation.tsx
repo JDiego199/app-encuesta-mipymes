@@ -36,7 +36,7 @@ export function SurveyNavigation({
     return (
       <div className="space-y-2">
         <div className="flex justify-between items-center text-sm text-bidata-gray">
-          <span>Pregunta {currentIndex + 1} de {totalQuestions}</span>
+          <span>{/*Pregunta {currentIndex + 1} de {totalQuestions}*/}</span>
           <span>{Math.round(progressPercentage)}% completado</span>
         </div>
         <Progress 
