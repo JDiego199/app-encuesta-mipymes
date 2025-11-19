@@ -8,23 +8,57 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { FileText, Loader2, Target, Play, BarChart3 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "@/lib/supabase";
-import { useLimeSurveyValidation } from "@/hooks/useLimeSurveyValidation";
+import { InternalSurveyService } from "@/services/internalSurveyService";
 import { toast } from "sonner";
 
 export function Dashboard() {
   const { user, profile } = useAuth();
   const navigate = useNavigate();
   const [isProcessing, setIsProcessing] = useState(false);
-
-  // Use new LimeSurvey validation hook
-  const { participantStatus, checkParticipantStatus } =
-    useLimeSurveyValidation();
+  const [participantStatus, setParticipantStatus] = useState<{
+    status: 'loading' | 'not_found' | 'not_started' | 'in_progress' | 'completed' | 'error';
+    error?: string;
+    currentQuestionIndex?: number;
+    progressPercentage?: number;
+  }>({ status: 'loading' });
 
   // Debug logging
   console.log("Dashboard - Current participant status:", participantStatus);
+
+  // Check participant status using internal survey service
+  const checkParticipantStatus = useCallback(async () => {
+    if (!user) {
+      setParticipantStatus({ status: 'error', error: 'Usuario no autenticado' });
+      return;
+    }
+
+    try {
+      console.log("Dashboard - Checking participant status for user:", user.id);
+      const status = await InternalSurveyService.getParticipantStatus(user.id);
+      console.log("Dashboard - Participant status:", status);
+      
+      setParticipantStatus({
+        status: status.status,
+        currentQuestionIndex: status.currentQuestionIndex,
+        progressPercentage: status.progressPercentage
+      });
+    } catch (error) {
+      console.error("Dashboard - Error checking participant status:", error);
+      setParticipantStatus({ 
+        status: 'error', 
+        error: 'Error al verificar estado de participación' 
+      });
+    }
+  }, [user]);
+
+  // Load participant status on component mount
+  useEffect(() => {
+    if (user) {
+      checkParticipantStatus();
+    }
+  }, [user, checkParticipantStatus]);
 
   const handleSurveyAction = async () => {
     console.log(
@@ -32,32 +66,27 @@ export function Dashboard() {
       participantStatus.status
     );
     setIsProcessing(true);
-    console.log(participantStatus)
+    
     try {
       switch (participantStatus.status) {
         case "not_found":
-          console.log("Dashboard - Handling not_found status");
-          console.log("Dashboard - About to call handleParticipantRegistration");
-          // Automatically register participant and then navigate to survey
-          await handleParticipantRegistration();
-          console.log("Dashboard - handleParticipantRegistration completed");
+        case "not_started":
+          console.log("Dashboard - Starting new survey");
+          // Navigate to survey page with default survey ID
+          navigate("/survey/bfb4c2e2-ea0e-406a-b09c-226e883dd417");
           break;
-        case "pending":
-          console.log(
-            "Dashboard - Handling pending status, redirecting to survey"
-          );
-          // Redirect directly to LimeSurvey
-          window.location.href = `https://limesurvey.pruebasbidata.site/index.php/312585?token=${user?.id}`;
+        case "in_progress":
+          console.log("Dashboard - Continuing survey in progress");
+          // Navigate to survey page to continue with default survey ID
+          navigate("/survey/bfb4c2e2-ea0e-406a-b09c-226e883dd417");
           break;
         case "completed":
-          console.log(
-            "Dashboard - Handling completed status, navigating to /dashboard/resultados"
-          );
+          console.log("Dashboard - Navigating to results");
           // Navigate to results dashboard
           navigate("/dashboard/resultados");
           break;
         case "error":
-          console.log("Dashboard - Handling error status, retrying");
+          console.log("Dashboard - Retrying status check");
           await checkParticipantStatus();
           break;
         default:
@@ -74,65 +103,7 @@ export function Dashboard() {
     }
   };
 
-  const handleParticipantRegistration = async () => {
-    console.log("handleParticipantRegistration - Starting registration process");
-    console.log("handleParticipantRegistration - User:", user?.id);
-    console.log("handleParticipantRegistration - Profile:", profile);
-    
-    if (!user || !profile) {
-      console.error("handleParticipantRegistration - Missing user or profile data");
-      toast.error("Información de usuario no disponible");
-      return;
-    }
 
-    try {
-      console.log("handleParticipantRegistration - Calling add-limesurvey-participant Edge Function");
-
-      const requestBody = {
-        email: user.email,
-        firstname:
-          profile.nombre_persona || profile.razon_social || "Usuario",
-        lastname: profile.razon_social ? "Empresa" : "Apellido",
-      };
-      
-      console.log("handleParticipantRegistration - Request body:", requestBody);
-
-      const { data, error } = await supabase.functions.invoke(
-        "add-limesurvey-participant",
-        {
-          body: requestBody,
-        }
-      );
-
-      console.log("handleParticipantRegistration - Edge Function response:", { data, error });
-
-      if (error) {
-        console.error("handleParticipantRegistration - Edge Function error:", error);
-        throw error;
-      }
-
-      if (data?.error) {
-        console.error("handleParticipantRegistration - Data error:", data.error);
-        throw new Error(data.error.message || data.error);
-      }
-
-      console.log("handleParticipantRegistration - Participant registered successfully:", data);
-      toast.success("Registro completado exitosamente");
-
-      // Refresh participant status after registration
-      console.log("handleParticipantRegistration - Refreshing participant status");
-      await checkParticipantStatus();
-
-      // Redirect directly to survey
-      console.log("handleParticipantRegistration - Redirecting to survey");
-      window.location.href = `https://limesurvey.pruebasbidata.site/index.php/312585?token=${user.id}`;
-    } catch (error: any) {
-      console.error("handleParticipantRegistration - Error:", error);
-      const errorMessage = error.message || "Error al registrar participante";
-      toast.error(errorMessage);
-      throw error;
-    }
-  };
 
   // Get button configuration based on participant status
   const getButtonConfig = () => {
@@ -149,20 +120,22 @@ export function Dashboard() {
           description: "Verificando su estado de participación...",
         };
       case "not_found":
+      case "not_started":
         return {
           text: "Iniciar Diagnóstico",
           icon: <FileText className="mr-2 h-5 w-5" />,
           disabled: false,
           description:
-            "Participe en nuestro diagnóstico para evaluar el estado del ecosistema empresarial MIPYMES en su región",
+            "Participe en nuestro diagnóstico interno para evaluar el estado del ecosistema empresarial MIPYMES en su región",
         };
-      case "pending":
+      case "in_progress":
         return {
           text: "Continuar Encuesta",
           icon: <Play className="mr-2 h-5 w-5" />,
           disabled: false,
-          description:
-            "Continúe con su diagnóstico del ecosistema empresarial MIPYMES",
+          description: participantStatus.progressPercentage 
+            ? `Continúe con su diagnóstico del ecosistema empresarial MIPYMES (${participantStatus.progressPercentage}% completado)`
+            : "Continúe con su diagnóstico del ecosistema empresarial MIPYMES",
         };
       case "completed":
         return {

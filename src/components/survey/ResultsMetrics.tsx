@@ -180,6 +180,39 @@ export function ResultsMetrics({ metricsData, className }: ResultsMetricsProps) 
         )
       })}
 
+
+      
+      {/* Global Radar Chart - Comparison of All Dimensions */}
+      {categories.length > 1 && (
+          <div className="w-full h-[565px]">
+            <ComparisonChart
+              metrics={categories.map(cat => {
+                const dimMetrics = metricsByCategory[cat];
+                const totalUser = dimMetrics.reduce((sum, m) => sum + m.userValue, 0);
+                const totalAvg = dimMetrics.reduce((sum, m) => sum + m.averageValue, 0);
+                const totalMax = dimMetrics.reduce((sum, m) => sum + m.maxValue, 0);
+
+                return {
+                  id: `dim_${cat}`,
+                  name: cat,
+                  category: cat,
+                  userValue: +(totalUser / dimMetrics.length).toFixed(1),
+                  averageValue: +(totalAvg / dimMetrics.length).toFixed(1),
+                  maxValue: +(totalMax / dimMetrics.length).toFixed(1),
+                  description: `Comparativo general de todas las dimensión ${cat}`,
+                  unit: "puntos",
+                };
+              })}
+              chartType="radar"
+              title="Comparativo Visual de Todas las Categorías"
+              className="mt-4"
+            />
+          </div>       
+      )}
+
+
+
+
       {/* Additional Insights */}
       <Card className="p-6 bg-blue-50 border-blue-200">
         <h3 className="text-lg font-semibold text-blue-900 mb-3">Insights Adicionales</h3>

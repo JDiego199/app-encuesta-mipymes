@@ -39,7 +39,7 @@ export interface SurveyDimension {
   userScore: number
   averageScore: number
   maxScore: number
-  questions: SurveyQuestion[]
+  subdimensions: string[]
 }
 
 export interface OverallMetrics {

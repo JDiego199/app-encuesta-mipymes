@@ -12,6 +12,7 @@ import { CompleteProfilePage } from "@/pages/CompleteProfilePage";
 import { Dashboard } from "@/pages/Dashboard";
 import { ResultsDashboard } from "@/pages/ResultsDashboard";
 import { SurveyPage } from "@/pages/SurveyPage";
+import { InternalSurveyPage } from "@/pages/InternalSurveyPage";
 import { ResetPasswordPage } from "@/pages/ResetPasswordPage";
 import { AuthCallbackPage } from "@/pages/AuthCallbackPage";
 import { Toaster } from "sonner";
@@ -87,6 +88,22 @@ function App() {
                   <AppLayout>
                     <SurveyPage />
                   </AppLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/survey/:surveyId"
+              element={
+                <ProtectedRoute>
+                  <SurveyPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/internal-survey"
+              element={
+                <ProtectedRoute>
+                  <InternalSurveyPage />
                 </ProtectedRoute>
               }
             />

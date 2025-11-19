@@ -55,21 +55,19 @@ export function MetricCard({ metric, className }: MetricCardProps) {
   }
 
   return (
+    
     <Card className={`p-6 ${className}`}>
       <div className="space-y-4">
         {/* Header */}
         <div className="flex items-start justify-between">
           <div className="flex-1">
             <h3 className="font-semibold text-lg text-gray-900">{name}</h3>
-            <p className="text-sm text-gray-600 mt-1">{description}</p>
-            <span className="inline-block px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded-full mt-2">
-              {category}
-            </span>
           </div>
           <div className="flex items-center space-x-2 ml-4">
             {getComparisonIcon()}
           </div>
         </div>
+        
 
         {/* Scores */}
         <div className="grid grid-cols-2 gap-4">
