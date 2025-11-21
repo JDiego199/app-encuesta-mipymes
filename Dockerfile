@@ -17,6 +17,7 @@ RUN pnpm install --frozen-lockfile
 COPY . .
 
 # Build the application
+ENV CI=true
 RUN pnpm run build
 
 # Production stage
