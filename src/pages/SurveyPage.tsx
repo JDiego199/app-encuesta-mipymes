@@ -259,16 +259,6 @@ export function SurveyPage() {
             />
           </CardContent>
         </Card>
-
-        {/* Auto-save indicator */}
-        {isSaving && (
-          <div className="mt-4 text-center">
-            <div className="inline-flex items-center gap-2 text-sm text-bidata-gray bg-white px-4 py-2 rounded-full shadow-sm">
-              <Loader2 className="h-4 w-4 animate-spin" />
-              Guardando automáticamente...
-            </div>
-          </div>
-        )}
       </div>
     </div>
   )

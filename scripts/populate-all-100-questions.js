@@ -142,7 +142,7 @@ const questions = [
   },
   {
     id_item: 'I011',
-    question_text: 'Mi empresa ha recibido o participado en iniciativas impulsadas por diferentes actores locales (públicos o privados) durante los últimos 2 años.',
+    question_text: 'Mi empresa ha recibido o participado enf iniciativas impulsadas por diferentes actores locales (públicos o privados) durante los últimos 2 años.',
     dimension: 'Marco Institucional',
     subdimension: 'Coordinación interinstitucional',
     escala: 'Likert 1-5',
