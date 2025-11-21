@@ -291,30 +291,35 @@ function getQuestionMaxValue(question: QuestionRow): number {
  * Group questions by category based on their order and content
  * This maps to the dimensions from the artificial results service
  */
-function categorizeQuestions(questions: QuestionWithResponses[]): Record<string, QuestionWithResponses[]> {
-  const categories: Record<string, QuestionWithResponses[]> = {
-    'Marco Institucional': [],
-    'Entorno Operativo / Simplificación de Procedimientos': [],
-    'Acceso al Financiamiento': [],
-    'Servicios de Desarrollo Empresarial (SDE) y Compras Públicas': [],
-    'Innovación y Tecnología': [],
-    'Transformación Productiva': [],
-    'Acceso a Mercados e Internacionalización': [],
-    'Digitalización': []
-  }
+function categorizeQuestions(
+  questions: QuestionWithResponses[]
+): Record<string, QuestionWithResponses[]> {
 
-  // Distribute questions evenly across categories based on order
-  const questionsPerCategory = Math.ceil(questions.length / Object.keys(categories).length)
-  const categoryNames = Object.keys(categories)
+  const categories: Record<string, QuestionWithResponses[]> = {}
 
-  questions.forEach((question, index) => {
-    const categoryIndex = Math.floor(index / questionsPerCategory)
-    const categoryName = categoryNames[categoryIndex] || categoryNames[categoryNames.length - 1]
-    categories[categoryName].push(question)
+  questions.forEach(question => {
+
+    if (!question.dimension || question.dimension.trim() === '') {
+      console.warn('Pregunta sin dimensión:', question)
+      return
+    }
+
+    const category = question.dimension.trim()
+
+    if (!categories[category]) {
+      categories[category] = []
+    }
+
+    categories[category].push(question)
+  })
+
+  Object.keys(categories).forEach(category => {
+    categories[category].sort((a, b) => a.order_index - b.order_index)
   })
 
   return categories
 }
+
 
 /**
  * Transform survey results data into MetricsData format

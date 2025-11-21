@@ -192,10 +192,10 @@ export function QuestionRenderer({ question, value, onChange, disabled = false }
         return (
           <div className="space-y-4">
             {/* Labels top-left / top-right */}
-            <div className="flex justify-between items-center text-sm text-bidata-gray">
+            {/*<div className="flex justify-between items-center text-sm text-bidata-gray">
               <span>{likertConfig.left_label}</span>
               <span>{likertConfig.right_label}</span>
-            </div>
+            </div>                                    */}
 
             {/* Contenedor de columnas */}
             <div className="flex justify-between mt-4 items-start">
